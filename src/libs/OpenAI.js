@@ -1,5 +1,6 @@
 import { OPENAI_KEY } from "@/env";
 
+// TODO: this should be on server-side
 export async function transcribeAudioWithOpenAI(audioFile) {
   const formData = new FormData();
   formData.append("file", audioFile);
@@ -17,3 +18,5 @@ export async function transcribeAudioWithOpenAI(audioFile) {
   console.log(resData);
   return resData.text;
 }
+
+
