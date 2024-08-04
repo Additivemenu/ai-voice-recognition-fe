@@ -1,5 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
+import { transcribeAudioWithOpenAI } from "@/libs/OpenAI";
 
 const startBtn = ref(null); // these ref value get populated during onMounted() lifecycle
 const stopBtn = ref(null);
@@ -45,7 +46,14 @@ const handleStartRecord = async () => {
     const audioUrl = URL.createObjectURL(audioBlob);
     audioPlayback.value.src = audioUrl; // ! feed the audio to the audio element
 
-    // TODO:  integrate with OpenAI whisper model for audio -> text
+    // TODO:  audioBlob -> audioFile (mp3)
+    const audioFile = new File([audioBlob], "audio.mp3", { type: "audio/mp3" });
+    try {
+      const transcribedText = await transcribeAudioWithOpenAI(audioFile);
+      alert(transcribedText);
+    } catch (error) {
+      console.error(error);
+    }
 
     // final cleanup
     audioChunks = []; // Reset the chunks array

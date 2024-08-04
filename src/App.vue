@@ -5,7 +5,10 @@ import AudioRecorder from "./components/AudioRecorder.vue";
 <template>
   <main>
     <div class="voice-control">
-      <input type="text" />
+      <textarea
+        class="voice-text"
+        placeholder="Type your message here..."
+      ></textarea>
     </div>
 
     <AudioRecorder />

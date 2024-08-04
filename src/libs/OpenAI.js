@@ -1,15 +1,19 @@
 import { OPENAI_KEY } from "@/env";
-import OpenAI from "openai";
 
-const openai = new OpenAI(api_key=OPENAI_KEY);
+export async function transcribeAudioWithOpenAI(audioFile) {
+  const formData = new FormData();
+  formData.append("file", audioFile);
+  formData.append("model", "whisper-1");
 
-export async function transcribeAudioWithOpenAI() {
-  const transcription = await openai.audio.transcriptions.create({
-    file: '123',  // TODO: Replace with the actual file ID
-    model: "whisper-1",
-  });
+  // Send the request using fetch
+  const resData = await fetch("https://api.openai.com/v1/audio/transcriptions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_KEY}`,
+    },
+    body: formData,
+  }).then((response) => response.json());
 
-  console.log(transcription.text);
-  return transcription.text;
+  console.log(resData);
+  return resData.text;
 }
-
