@@ -1,14 +1,14 @@
 <script setup>
-const handleMicrophone = () => {
-  alert("open microphone");
-};
+import AudioRecorder from "./components/AudioRecorder.vue";
 </script>
 
 <template>
   <main>
-    <input type="text" />
+    <div class="voice-control">
+      <input type="text" />
+    </div>
 
-    <button @click="handleMicrophone">enable microphone</button>
+    <AudioRecorder />
   </main>
 </template>
 
