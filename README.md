@@ -12,6 +12,12 @@ See [Vite Configuration Reference](https://vitejs.dev/config/).
 
 ## Project Setup
 
+create a env.js file under src folder:
+```js
+export const OPENAI_API_KEY ="your open api key here"
+```
+
+install dependencies:
 ```sh
 npm install
 ```

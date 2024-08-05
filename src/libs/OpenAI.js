@@ -1,4 +1,4 @@
-import { OPENAI_KEY } from "@/env";
+import { OPENAI_API_KEY } from "@/env";
 
 // TODO: this should be on server-side
 export async function transcribeAudioWithOpenAI(audioFile) {
@@ -7,16 +7,17 @@ export async function transcribeAudioWithOpenAI(audioFile) {
   formData.append("model", "whisper-1");
 
   // Send the request using fetch
-  const resData = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${OPENAI_KEY}`,
-    },
-    body: formData,
-  }).then((response) => response.json());
+  const resData = await fetch(
+    "https://api.openai.com/v1/audio/transcriptions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
+      },
+      body: formData,
+    }
+  ).then((response) => response.json());
 
   console.log(resData);
   return resData.text;
 }
-
-
