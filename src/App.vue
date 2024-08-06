@@ -1,4 +1,25 @@
-<script setup>
+<template>
+  <div id="app">
+    <SpeechRecognition />
+  </div>
+</template>
+
+<script>
+import SpeechRecognition from './components/WebKitSpeech.vue';
+
+export default {
+  components: {
+    SpeechRecognition,
+  },
+};
+</script>
+
+<style>
+
+</style>
+
+
+<!-- <script setup>
 import AudioRecorder from "./components/AudioRecorder.vue";
 import { onMounted, ref } from "vue";
 import { useChatbotStore } from "@/stores/chatbot-store.js";
@@ -45,4 +66,4 @@ const setNote = (textContent) => {
   width: 100px;
   text-align: center;
 }
-</style>
+</style> -->
