@@ -1,163 +1,195 @@
 <template>
-    <div class="voice-rec" :style="{ backgroundColor: backgroundColor }">
-        <h1>Voice Recognition</h1>
-        <p>Command: {{ command }}</p>
-        <p>Transcript: {{ transcript }}</p>
-        <button @click="toggleListening">{{ listening ? 'Stop' : 'Start' }}</button>
-    </div>
+  <div class="voice-rec" :style="{ backgroundColor: backgroundColor }">
+    <h1>Voice Recognition</h1>
+    <p>Command: {{ command }}</p>
+    <p>Transcript: {{ transcript }}</p>
+    <button @click="toggleListening">{{ listening ? "Stop" : "Start" }}</button>
+  </div>
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from 'vue';
-import stringSimilarity from 'string-similarity';
+import { ref, onMounted, onUnmounted } from "vue";
+import stringSimilarity from "string-similarity";
 
 export default {
-    setup() {
-        const transcript = ref('');
-        const command = ref('');
-        const listening = ref(false);
-        const backgroundColor = ref('white');
-        let recognition;
-        let timeoutId;
+  setup() {
+    const transcript = ref(""); // store the transcript of user audio
+    const command = ref(""); // indicate if is in command mode. Under command mode, web page would respond to the user audio
+    const listening = ref(false); // indicate if the web page is listening to user audio. if true, then web page can be turned to command mode and respond to user audio
+    const backgroundColor = ref("white"); // represent command response
+    let recognition;
+    let timeoutId; // !
 
-        const possibleCommands = [
-            'hey tasker',
-            'hi tasker',
-            'hello tasker',
-            'hey task',
-            'hi task',
-            'hello task',
-        ]
+    const possibleCommands = [
+      "hey tasker",
+      "hi tasker",
+      "hello tasker",
+      "hey task",
+      "hi task",
+      "hello task",
+    ];
 
-        const startListening = () => {
-            if (recognition) {
-                recognition.start();
-                listening.value = true;
-            }
-        };
+    const startListening = () => {
+      if (recognition) {
+        recognition.start();
+        listening.value = true;
+      }
+    };
 
-        const stopListening = () => {
-            if (recognition) {
-                recognition.stop();
-                listening.value = false;
-            }
-        };
+    const stopListening = () => {
+      if (recognition) {
+        recognition.stop();
+        listening.value = false;
+      }
+    };
 
-        const toggleListening = () => {
-            if (listening.value) {
-                stopListening();
-            } else {
-                startListening();
-            }
-        };
+    const toggleListening = () => {
+      if (listening.value) {
+        stopListening();
+      } else {
+        startListening();
+      }
+    };
 
-        function isSimilar(input) {
-            const text = input.toLowerCase().replace(/[^\w\s]/g, '');
-            const words = text.split(/\s+/).filter(word => word.length > 0);
-            const combinations = words.slice(0, -1).map((word, i) => word + ' ' + words[i + 1]);
+    function isSimilar(input) {
+      const text = input.toLowerCase().replace(/[^\w\s]/g, "");
+      const words = text.split(/\s+/).filter((word) => word.length > 0);
+      const combinations = words
+        .slice(0, -1)
+        .map((word, i) => word + " " + words[i + 1]);
 
-            return combinations.some(combination => {
-                const isSimilarToAnyCommand = possibleCommands.some(command => {
-                    const similarity = stringSimilarity.compareTwoStrings(combination, command);
-                    return similarity > 0.7;
-                });
-                const isRegexMatch = /(hey|hello|hi) task(er)?/i.test(combination);
-
-                return isSimilarToAnyCommand || isRegexMatch;
-            });
-
-            return false;
-        }
-
-        onMounted(() => {
-            if ('webkitSpeechRecognition' in window) {
-                recognition = new window.webkitSpeechRecognition();
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.lang = 'en-US';
-                recognition.maxAlternatives = 1;
-
-                recognition.onresult = (event) => {
-                    let interimTranscript = '';
-                    for (let i = event.resultIndex; i < event.results.length; i++) {
-                        const speechText = event.results[i][0].transcript.trim();
-                        console.log(speechText)
-                        if (event.results[i].isFinal) {
-                            const speechText = event.results[i][0].transcript.trim();
-                            console.log("Detected speech: ", speechText);
-                            if (isSimilar(speechText)) {
-                                command.value = 'Hey Tasker';
-                                transcript.value = '';
-                            } else if (command.value) {
-                                transcript.value += speechText + ' ';
-                            }
-                        } else {
-                            interimTranscript += speechText;
-                        }
-                    }
-
-                    clearTimeout(timeoutId);
-                    if (command.value) {
-                        command.value = 'Hey Tasker';
-                        transcript.value = transcript.value.trim().toLowerCase().replace(/[^\w\s]/g, '');
-                        timeoutId = setTimeout(() => {
-                            // command.value = 'Hey Tasker';
-                            // transcript.value = transcript.value.trim().toLowerCase().replace(/[^\w\s]/g, '');
-                            if (transcript.value === 'black' || transcript.value === 'white' || transcript.value === 'red' || transcript.value === 'green' || transcript.value === 'blue') {
-                                backgroundColor.value = transcript.value;
-                            } else if (transcript.value === 'refresh the page') {
-                                window.location.reload();
-                            }
-                            command.value = '';
-                            transcript.value = '';
-                        }, 3000);
-                    }
-                };
-
-                recognition.onerror = (event) => {
-                    if (event.error === 'no-speech') {
-                        console.log('Onerror: no speech detected, restarting.');
-                        stopListening();
-                        setTimeout(startListening, 100);
-                    }
-                };
-
-                recognition.onend = () => {
-                    if (listening.value) {
-                        console.log('Onend: restart listening');
-                        setTimeout(startListening, 100);
-                    }
-                };
-
-                startListening();
-            } else {
-                alert('Unsupported browser');
-            }
+      return combinations.some((combination) => {
+        const isSimilarToAnyCommand = possibleCommands.some((command) => {
+          const similarity = stringSimilarity.compareTwoStrings(
+            combination,
+            command
+          );
+          return similarity > 0.7;
         });
+        const isRegexMatch = /(hey|hello|hi) task(er)?/i.test(combination);
 
-        onUnmounted(() => {
+        return isSimilarToAnyCommand || isRegexMatch;
+      });
+    }
+
+    // ! init recognition and start recognizing speech
+    onMounted(() => {
+      if ("webkitSpeechRecognition" in window) {
+        recognition = new window.webkitSpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "en-US";
+        recognition.maxAlternatives = 1;
+
+        // ! parsing the speech recognition results into string
+        recognition.onresult = (event) => {
+          // SpeechRecognitionEvent
+          let interimTranscript = "";
+          // debugger;
+
+          // the speech recognition results are filling in the event.results word by word, but the event can automatically merge the words into sentence
+          // -> so onresult handler is executed multiple times for each word, but the final result is merged into a sentence
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const speechText = event.results[i][0].transcript.trim();
+            // console.log(speechText)
+
+            // TODO: how is web speech api determine if it is final?
+            if (event.results[i].isFinal) {
+              // user has stopped speaking
+              const speechText = event.results[i][0].transcript.trim();
+              console.log("Detected speech: ", speechText); // ! this is the final result of user speech
+
+              if (!isSimilar(speechText)) {
+                return;
+              }
+
+              // ! trigger command mode
+              command.value = "Hey Tasker";
+              transcript.value = speechText
+                .trim()
+                .toLowerCase()
+                .replace(/[^\w\s]/g, "");
+
+              timeoutId = setTimeout(() => {
+                // ! response to the user audio
+                // step1: parse the transcript in natural language to command
+                // TODO: probably would need AI model to parse the transcript to pre-defined script input arguments
+
+                // step2: run the script based on the parsed transcript -> command + strategy pattern to handle different commands and payload
+                if (
+                  transcript.value.includes("black") ||
+                  transcript.value === "white" ||
+                  transcript.value === "red" ||
+                  transcript.value === "green" ||
+                  transcript.value === "blue"
+                ) {
+                  // backgroundColor.value = transcript.value;
+                  backgroundColor.value = "black";
+                } else if (transcript.value === "refresh the page") {
+                  window.location.reload();
+                }
+
+                // step3: clean up the command and transcript
+                command.value = "";
+                transcript.value = "";
+              }, 3000);
+            } else {
+              // user is still speaking
+              interimTranscript += speechText;
+
+              // ! debouncing
+              if (timeoutId) {
+                clearTimeout(timeoutId);
+              }
+            }
+          }
+          
+        };
+
+        recognition.onerror = (event) => {
+          if (event.error === "no-speech") {
+            console.log("Onerror: no speech detected, restarting.");
             stopListening();
-        });
-
-        return {
-            transcript,
-            command,
-            listening,
-            toggleListening,
-            backgroundColor
+            setTimeout(startListening, 100);
+          }
         };
-    },
+
+        recognition.onend = () => {
+          if (listening.value) {
+            console.log("Onend: restart listening");
+            setTimeout(startListening, 100);
+          }
+        };
+
+        startListening();
+      } else {
+        alert("Unsupported browser");
+      }
+    });
+
+    onUnmounted(() => {
+      stopListening();
+    });
+
+    return {
+      transcript,
+      command,
+      listening,
+      toggleListening,
+      backgroundColor,
+    };
+  },
 };
 </script>
 
 <style scoped>
 h1 {
-    color: #333;
+  color: #333;
 }
 
 p {
-    font-size: 18px;
-    color: #555;
+  font-size: 18px;
+  color: #555;
 }
 
 .voice-rec {
