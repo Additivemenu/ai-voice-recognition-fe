@@ -136,10 +136,9 @@ export default {
                   speak(
                     "sorry, I cannot understand your command, can you please repeat?"
                   );
+                  alert("Failed to parse the transcript to command");
 
-                  debugger;
                   console.error(error);
-                  //   alert("Failed to parse the transcript to command");
                 }
               }, 2000);
             } else {
