@@ -24,7 +24,9 @@ export default {
             'hey tasker',
             'hi tasker',
             'hello tasker',
-            'hi'
+            'hey task',
+            'hi task',
+            'hello task',
         ]
 
         const startListening = () => {
@@ -96,15 +98,19 @@ export default {
 
                     clearTimeout(timeoutId);
                     if (command.value) {
+                        command.value = 'Hey Tasker';
+                        transcript.value = transcript.value.trim().toLowerCase().replace(/[^\w\s]/g, '');
                         timeoutId = setTimeout(() => {
-                            command.value = 'Hey Tasker';
-                            transcript.value = transcript.value.trim().toLowerCase().replace(/[^\w\s]/g, '');
+                            // command.value = 'Hey Tasker';
+                            // transcript.value = transcript.value.trim().toLowerCase().replace(/[^\w\s]/g, '');
                             if (transcript.value === 'black' || transcript.value === 'white' || transcript.value === 'red' || transcript.value === 'green' || transcript.value === 'blue') {
                                 backgroundColor.value = transcript.value;
                             } else if (transcript.value === 'refresh the page') {
                                 window.location.reload();
                             }
-                        }, 1000);
+                            command.value = '';
+                            transcript.value = '';
+                        }, 3000);
                     }
                 };
 
