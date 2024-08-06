@@ -10,12 +10,14 @@
 <script>
 import { ref, onMounted, onUnmounted } from "vue";
 import stringSimilarity from "string-similarity";
+import { parseTranscriptToCommands } from "@/libs/OpenAI";
+import { speak } from "@/libs/speak";
 
 export default {
   setup() {
     const transcript = ref(""); // store the transcript of user audio
     const command = ref(""); // indicate if is in command mode. Under command mode, web page would respond to the user audio
-    const listening = ref(false); // indicate if the web page is listening to user audio. if true, then web page can be turned to command mode and respond to user audio
+    const listening = ref(false); // indicate if the web page is listening to user audio. if true, then web page can be further turned to command mode and respond to user audio
     const backgroundColor = ref("white"); // represent command response
     let recognition;
     let timeoutId; // !
@@ -45,8 +47,10 @@ export default {
 
     const toggleListening = () => {
       if (listening.value) {
+        speak("Stop Listening");
         stopListening();
       } else {
+        speak("I am Listening");
         startListening();
       }
     };
@@ -85,7 +89,6 @@ export default {
         recognition.onresult = (event) => {
           // SpeechRecognitionEvent
           let interimTranscript = "";
-          // debugger;
 
           // the speech recognition results are filling in the event.results word by word, but the event can automatically merge the words into sentence
           // -> so onresult handler is executed multiple times for each word, but the final result is merged into a sentence
@@ -110,29 +113,35 @@ export default {
                 .toLowerCase()
                 .replace(/[^\w\s]/g, "");
 
-              timeoutId = setTimeout(() => {
-                // ! response to the user audio
+              // ! response to the user audio
+              timeoutId = setTimeout(async () => {
                 // step1: parse the transcript in natural language to command
                 // TODO: probably would need AI model to parse the transcript to pre-defined script input arguments
+                try {
+                  const result = await parseTranscriptToCommands(speechText);
 
-                // step2: run the script based on the parsed transcript -> command + strategy pattern to handle different commands and payload
-                if (
-                  transcript.value.includes("black") ||
-                  transcript.value === "white" ||
-                  transcript.value === "red" ||
-                  transcript.value === "green" ||
-                  transcript.value === "blue"
-                ) {
-                  // backgroundColor.value = transcript.value;
-                  backgroundColor.value = "black";
-                } else if (transcript.value === "refresh the page") {
-                  window.location.reload();
+                  console.log(result);
+
+                  // step2: run the script based on the parsed transcript -> command + strategy pattern to handle different commands and payload
+                  if (result.command_type === "change_background_color") {
+                    backgroundColor.value = result.color.toLowerCase();
+                  } else if (result.command_type === "refresh_page") {
+                    window.location.reload();
+                  }
+
+                  // step3: clean up the command and transcript
+                  command.value = "";
+                  transcript.value = "";
+                } catch (error) {
+                  speak(
+                    "sorry, I cannot understand your command, can you please repeat?"
+                  );
+
+                  debugger;
+                  console.error(error);
+                  //   alert("Failed to parse the transcript to command");
                 }
-
-                // step3: clean up the command and transcript
-                command.value = "";
-                transcript.value = "";
-              }, 3000);
+              }, 2000);
             } else {
               // user is still speaking
               interimTranscript += speechText;
@@ -143,7 +152,6 @@ export default {
               }
             }
           }
-          
         };
 
         recognition.onerror = (event) => {
