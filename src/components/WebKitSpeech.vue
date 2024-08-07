@@ -4,6 +4,12 @@
     <p>Command: {{ command }}</p>
     <p>Transcript: {{ transcript }}</p>
     <button @click="toggleListening">{{ listening ? "Stop" : "Start" }}</button>
+    <transition name="fade">
+      <p v-if="taskerActived">Tasker is listening...</p>
+    </transition>
+    <transition name="fade">
+      <p v-if="taskerProcessing">Processing...</p>
+    </transition>
   </div>
 </template>
 
@@ -19,6 +25,8 @@ export default {
     const command = ref(""); // indicate if is in command mode. Under command mode, web page would respond to the user audio
     const listening = ref(false); // indicate if the web page is listening to user audio. if true, then web page can be further turned to command mode and respond to user audio
     const backgroundColor = ref("white"); // represent command response
+    const taskerActived = ref(false); // indicate if the tasker is active
+    const taskerProcessing = ref(false); // indicate if the tasker is processing
     let recognition;
     let timeoutId; // !
 
@@ -86,8 +94,8 @@ export default {
         recognition = new window.webkitSpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
-        recognition.lang = "en-US";
-        recognition.maxAlternatives = 1;
+        recognition.lang = "en-AU";
+        recognition.maxAlternatives = 3;
 
         // ! parsing the speech recognition results into string
         recognition.onresult = (event) => {
@@ -97,8 +105,33 @@ export default {
           // the speech recognition results are filling in the event.results word by word, but the event can automatically merge the words into sentence
           // -> so onresult handler is executed multiple times for each word, but the final result is merged into a sentence
           for (let i = event.resultIndex; i < event.results.length; i++) {
-            const speechText = event.results[i][0].transcript.trim();
-            // console.log(speechText)
+            const alternatives = event.results[i];
+            const speechText = alternatives[0].transcript.trim();
+            console.log("option1: ", speechText);
+
+            // check if any alternative speech text is similar to any of the possible commands
+            let option2 = '';
+            let option3 = '';
+            if (alternatives.length > 1) {
+              option2 = alternatives[1].transcript.trim();
+              console.log("option2: ", option2);
+            }
+            if (alternatives.length > 2) {
+              option3 = alternatives[2].transcript.trim();
+              console.log("option3: ", option3);
+            }
+            
+            if (!(isSimilar(speechText) || isSimilar(option2) || isSimilar(option3))) {
+              return;
+            }
+
+            // display speech recognition after the taskr is activated
+            taskerActived.value = true;
+            command.value = "Taskr";
+            transcript.value = speechText
+                .trim()
+                .toLowerCase()
+                .replace(/[^\w\s]/g, "");
 
             // TODO: how is web speech api determine if it is final?
             if (event.results[i].isFinal) {
@@ -106,22 +139,12 @@ export default {
               const speechText = event.results[i][0].transcript.trim();
               console.log("Detected speech: ", speechText); // ! this is the final result of user speech
 
-              if (!isSimilar(speechText)) {
-                return;
-              }
-
-              // ! trigger command mode
-              command.value = "Hey Tasker";
-              transcript.value = speechText
-                .trim()
-                .toLowerCase()
-                .replace(/[^\w\s]/g, "");
-
               // ! response to the user audio
               timeoutId = setTimeout(async () => {
                 // step1: parse the transcript in natural language to command
                 // TODO: probably would need AI model to parse the transcript to pre-defined script input arguments
                 try {
+                  taskerProcessing.value = true;
                   const result = await parseTranscriptToCommands(speechText);
 
                   console.log(result);
@@ -136,6 +159,8 @@ export default {
                   // step3: clean up the command and transcript
                   command.value = "";
                   transcript.value = "";
+                  taskerActived.value = false;
+                  taskerProcessing.value = false;
                 } catch (error) {
                   await speak(
                     "sorry, I cannot understand your command, can you please repeat?"
@@ -143,6 +168,11 @@ export default {
                   alert("Failed to parse the transcript to command");
 
                   console.error(error);
+                  // step3: clean up the command and transcript
+                  command.value = "";
+                  transcript.value = "";
+                  taskerActived.value = false;
+                  taskerProcessing.value = false;
                 }
               }, 1000);
             } else {
@@ -188,6 +218,8 @@ export default {
       listening,
       toggleListening,
       backgroundColor,
+      taskerActived,
+      taskerProcessing,
     };
   },
 };
@@ -221,5 +253,12 @@ button {
   padding: 10px 20px;
   font-size: 16px;
   cursor: pointer;
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
