@@ -29,6 +29,10 @@ export default {
       "hey task",
       "hi task",
       "hello task",
+      "ok tasker",
+      "okay tasker",
+      "ok task",
+      "okay task"
     ];
 
     const startListening = () => {
@@ -45,12 +49,12 @@ export default {
       }
     };
 
-    const toggleListening = () => {
+    const toggleListening = async () => {
       if (listening.value) {
-        speak("Stop Listening");
+        await speak("Stop Listening");
         stopListening();
       } else {
-        speak("I am Listening");
+        await speak("I am Listening");
         startListening();
       }
     };
@@ -133,14 +137,14 @@ export default {
                   command.value = "";
                   transcript.value = "";
                 } catch (error) {
-                  speak(
+                  await speak(
                     "sorry, I cannot understand your command, can you please repeat?"
                   );
                   alert("Failed to parse the transcript to command");
 
                   console.error(error);
                 }
-              }, 2000);
+              }, 1000);
             } else {
               // user is still speaking
               interimTranscript += speechText;
